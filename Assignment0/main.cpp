@@ -44,5 +44,10 @@ int main(){
     // matrix multiply i * j
     // matrix multiply vector i * v
 
+    Eigen::Matrix4f model = Eigen::Matrix4f::Identity();
+    std::cout << "Example model:" << std::endl;
+    std::cout << model << std::endl;
+
+
     return 0;
 }

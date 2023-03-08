@@ -1,0 +1,3 @@
+/home/leego/Myspace/Game101hw/Assignment1/build/CMakeFiles/Rasterizer.dir
+/home/leego/Myspace/Game101hw/Assignment1/build/CMakeFiles/edit_cache.dir
+/home/leego/Myspace/Game101hw/Assignment1/build/CMakeFiles/rebuild_cache.dir
