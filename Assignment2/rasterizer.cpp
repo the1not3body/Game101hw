@@ -43,6 +43,16 @@ auto to_vec4(const Eigen::Vector3f& v3, float w = 1.0f)
 static bool insideTriangle(int x, int y, const Vector3f* _v)
 {   
     // TODO : Implement this function to check if the point (x, y) is inside the triangle represented by _v[0], _v[1], _v[2]
+    
+    float crossP1 = (_v[1].x() - _v[0].x()) * (y - _v[0].y()) - (x - _v[0].x()) * (_v[1].y() - _v[0].y()); 
+    float crossP2 = (_v[2].x() - _v[1].x()) * (y - _v[1].y()) - (x - _v[1].x()) * (_v[2].y() - _v[1].y()); 
+    float crossP3 = (_v[0].x() - _v[2].x()) * (y - _v[2].y()) - (x - _v[2].x()) * (_v[0].y() - _v[2].y()); 
+    
+    if ((crossP1 * crossP2) > 0 && (crossP1 * crossP3) > 0) { // 如果三个叉乘结果同号，说明点在三角形内部
+        return true;
+    } else {
+        return false;
+    }
 }
 
 static std::tuple<float, float, float> computeBarycentric2D(float x, float y, const Vector3f* v)
@@ -104,16 +114,51 @@ void rst::rasterizer::draw(pos_buf_id pos_buffer, ind_buf_id ind_buffer, col_buf
 
 //Screen space rasterization
 void rst::rasterizer::rasterize_triangle(const Triangle& t) {
-    auto v = t.toVector4();
-    
+    // 这里参考了https://zhuanlan.zhihu.com/p/415328934
+    auto v = t.toVector4(); // 这里的理解是将三角形的三个顶点坐标齐次化表示
+
     // TODO : Find out the bounding box of current triangle.
     // iterate through the pixel and find if the current pixel is inside the triangle
+    // 先找边界
+    float min_x = std::min(v[0].x(), std::min(v[1].x(), v[2].x()));
+    float min_y = std::min(v[0].y(), std::min(v[1].y(), v[2].y()));
+    float max_x = std::max(v[0].x(), std::max(v[1].x(), v[2].x()));
+    float max_y = std::max(v[0].y(), std::max(v[1].y(), v[2].y()));
+    
 
     // If so, use the following code to get the interpolated z value.
     //auto[alpha, beta, gamma] = computeBarycentric2D(x, y, t.v);
     //float w_reciprocal = 1.0/(alpha / v[0].w() + beta / v[1].w() + gamma / v[2].w());
     //float z_interpolated = alpha * v[0].z() / v[0].w() + beta * v[1].z() / v[1].w() + gamma * v[2].z() / v[2].w();
     //z_interpolated *= w_reciprocal;
+    // 遍历bounding box 中所有测试点
+    for (int x = min_x; x <= max_x; ++x) {
+        for (int y = min_y; y <= max_y; ++y) {
+            if (insideTriangle(x, y, t.v)) {
+                // 最小深度 无穷远
+                float min_depth = FLT_MAX;
+                
+                auto[alpha, beta, gamma] = computeBarycentric2D(x, y, t.v);
+                float w_reciprocal = 1.0 / (alpha / v[0].w() + beta / v[1].w() + gamma / v[2].w());
+                float z_interpolated = alpha * v[0].z() / v[0].w() + beta * v[1].z() / v[1].w() + gamma * v[2].z() / v[2].w();
+                z_interpolated *= w_reciprocal;
+
+                min_depth = std::min(min_depth, z_interpolated);
+
+                if (depth_buf[get_index(x, y)] > min_depth) {
+                    // 获得最上层应该渲染的颜色
+                    Vector3f color = t.getColor();
+                    Vector3f point;
+                    point << x, y, min_depth;
+                    // 更新深度
+                    depth_buf[get_index(x, y)] = min_depth;
+                    // 更新点的颜色
+                    set_pixel(point, color);
+                }
+
+            }
+        }
+    }
 
     // TODO : set the current pixel (use the set_pixel function) to the color of the triangle (use getColor function) if it should be painted.
 }
