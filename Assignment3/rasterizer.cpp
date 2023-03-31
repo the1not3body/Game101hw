@@ -280,7 +280,51 @@ void rst::rasterizer::rasterize_triangle(const Triangle& t, const std::array<Eig
     // Use: Instead of passing the triangle's color directly to the frame buffer, pass the color to the shaders first to get the final color;
     // Use: auto pixel_color = fragment_shader(payload);
 
- 
+    auto v = t.toVector4();
+    // 先找边界
+    float min_x = std::min(v[0].x(), std::min(v[1].x(), v[2].x()));
+    float min_y = std::min(v[0].y(), std::min(v[1].y(), v[2].y()));
+    float max_x = std::max(v[0].x(), std::max(v[1].x(), v[2].x()));
+    float max_y = std::max(v[0].y(), std::max(v[1].y(), v[2].y()));
+    
+     for (int x = min_x; x <= max_x; ++x) {
+        for (int y = min_y; y <= max_y; ++y) {
+            // 查看点是否在三角形内部
+            if (insideTriangle(x + 0.5, y + 0.5, t.v)) {
+                // 最小深度 无穷远
+                // float min_depth = FLT_MAX;
+                // 计算重心坐标
+                auto[alpha, beta, gamma] = computeBarycentric2D(x + 0.5, y + 0.5, t.v); 
+                // 深度插值
+                float w_reciprocal = 1.0 / (alpha / v[0].w() + beta / v[1].w() + gamma / v[2].w());         
+                float z_interpolated = alpha * v[0].z() / v[0].w() + beta * v[1].z() / v[1].w() + gamma * v[2].z() / v[2].w();
+                z_interpolated *= w_reciprocal;
+                // min_depth = std::min(min_depth, z_interpolated);
+                // 查看是否要更新深度
+                if (depth_buf[get_index(x, y)] > -z_interpolated) {
+                    // 颜色插值
+                    auto interpolated_color = interpolate(alpha, beta, gamma, t.color[0], t.color[1], t.color[2], 1);
+                    // 法向量插值
+                    auto interpolated_normal = interpolate(alpha, beta, gamma, t.normal[0], t.normal[1], t.normal[2], 1);
+                    // 纹理插值
+                    auto interpolated_texcoords = interpolate(alpha, beta, gamma, t.tex_coords[0], t.tex_coords[1], t.tex_coords[2], 1);
+                    // 着色坐标插值
+                    auto interpolated_shadingcooreds = interpolate(alpha, beta, gamma, view_pos[0], view_pos[1], view_pos[2], 1);
+                    // 将插值属性传入fragment_shader_playload
+                    fragment_shader_payload payload( interpolated_color, interpolated_normal.normalized(), interpolated_texcoords, texture ? &*texture : nullptr);
+                    // 传入原顶点坐标
+                    payload.view_pos = interpolated_shadingcooreds;
+                    // 更新深度
+                    depth_buf[get_index(x, y)] = -z_interpolated;
+                    // 使用shader计算颜色
+                    auto pixel_color = fragment_shader(payload);
+                    // 着色
+                    set_pixel({x, y}, pixel_color);
+                }
+
+            }
+        }
+    }
 }
 
 void rst::rasterizer::set_model(const Eigen::Matrix4f& m)
