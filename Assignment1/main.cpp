@@ -48,14 +48,30 @@ Eigen::Matrix4f get_projection_matrix(float eye_fov, float aspect_ratio,
     // TODO: Implement this function
     // Create the projection matrix for the given parameters.
     // Then return it.
-    
-    Eigen::Matrix4f persp;
-    persp << tan(MY_PI / 2 - (eye_fov / 2) * (MY_PI / 180)) / aspect_ratio , 0, 0, 0,
-             0, tan(MY_PI / 2 - (eye_fov / 2) * (MY_PI / 180)), 0, 0,
-             0, 0, (zNear + zFar) / (zNear - zFar), - 2 * zNear * zFar / (zNear - zFar),
-             0, 0, 1, 0;
+    eye_fov = MY_PI / 180.f * eye_fov;
 
-    projection = persp * projection;
+    Eigen::Matrix4f ortho2proj, ortho;
+    ortho2proj << zNear, 0, 0, 0,
+                0, zNear, 0, 0,
+                0, 0, zNear + zFar, - zNear * zFar,
+                0, 0, 1, 0;
+
+    double w, h, z;
+    h = - zNear * tan(eye_fov / 2) * 2; 
+    w = h * aspect_ratio;
+    z = zFar - zNear;
+    
+    ortho << 2 / w, 0, 0, 0,
+            0, 2 / h, 0, 0,
+            0, 0, 2 / z, - (zNear + zFar) / 2,
+            0, 0, 0, 1;
+    // Eigen::Matrix4f persp;
+    // persp << tan(MY_PI / 2 - (eye_fov / 2) * (MY_PI / 180)) / aspect_ratio , 0, 0, 0,
+    //          0, tan(MY_PI / 2 - (eye_fov / 2) * (MY_PI / 180)), 0, 0,
+    //          0, 0, (zNear + zFar) / (zNear - zFar), - 2 * zNear * zFar / (zNear - zFar),
+    //          0, 0, 1, 0;
+
+    projection = ortho * ortho2proj * projection;
 
     return projection;
 }

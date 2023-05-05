@@ -112,6 +112,23 @@ void rst::rasterizer::draw(pos_buf_id pos_buffer, ind_buf_id ind_buffer, col_buf
     }
 }
 
+// 插值计算
+static Eigen::Vector3f interpolate(float alpha, float beta, float gamma, const Eigen::Vector3f& vert1, const Eigen::Vector3f& vert2, const Eigen::Vector3f& vert3, float weight)
+{
+    return (alpha * vert1 + beta * vert2 + gamma * vert3) / weight;
+}
+
+static Eigen::Vector2f interpolate(float alpha, float beta, float gamma, const Eigen::Vector2f& vert1, const Eigen::Vector2f& vert2, const Eigen::Vector2f& vert3, float weight)
+{
+    auto u = (alpha * vert1[0] + beta * vert2[0] + gamma * vert3[0]);
+    auto v = (alpha * vert1[1] + beta * vert2[1] + gamma * vert3[1]);
+
+    u /= weight;
+    v /= weight;
+
+    return Eigen::Vector2f(u, v);
+}
+
 //Screen space rasterization
 void rst::rasterizer::rasterize_triangle(const Triangle& t) {
     // 这里参考了https://zhuanlan.zhihu.com/p/415328934
@@ -146,14 +163,22 @@ void rst::rasterizer::rasterize_triangle(const Triangle& t) {
                 min_depth = std::min(min_depth, z_interpolated);
 
                 if (depth_buf[get_index(x, y)] > min_depth) {
+                    
+                    // 颜色插值
+                    auto interpolated_color = interpolate(alpha, beta, gamma, t.color[0], t.color[1], t.color[2], 1);
+                    // // 法向量插值
+                    // auto interpolated_normal = interpolate(alpha, beta, gamma, t.normal[0], t.normal[1], t.normal[2], 1);
+                    // // 纹理插值
+                    // auto interpolated_texcoords = interpolate(alpha, beta, gamma, t.tex_coords[0], t.tex_coords[1], t.tex_coords[2], 1);
+            
                     // 获得最上层应该渲染的颜色
-                    Vector3f color = t.getColor();
+                    // Vector3f color = t.getColor();
                     Vector3f point;
                     point << x, y, min_depth;
                     // 更新深度
                     depth_buf[get_index(x, y)] = min_depth;
                     // 更新点的颜色
-                    set_pixel(point, color);
+                    set_pixel(point, interpolated_color);
                 }
 
             }
