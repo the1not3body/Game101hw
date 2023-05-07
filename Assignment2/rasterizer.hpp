@@ -91,13 +91,23 @@ namespace rst
         std::map<int, std::vector<Eigen::Vector3f>> col_buf;
 
         std::vector<Eigen::Vector3f> frame_buf;
+        std::vector<Eigen::Vector3f> frame_buf_ssaa;
 
         std::vector<float> depth_buf;
+        std::vector<float> depth_buff_ssaa;
         int get_index(int x, int y);
+        int get_index_ssaa(int x, int y, float i, float j);
+
 
         int width, height;
 
         int next_id = 0;
         int get_next_id() { return next_id++; }
+
+        int ssaa_w = 2;
+        int ssaa_h = 2;
+
+        float pixel_size_sm = 1.0 / ssaa_w;
+        float start_point = pixel_size_sm / 2.0;
     };
 }
