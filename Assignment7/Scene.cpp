@@ -5,9 +5,9 @@
 #include "Scene.hpp"
 
 
-void Scene::buildBVH() {
+void Scene::buildBVH(BVHAccel::SplitMethod splitMethod) {
     printf(" - Generating BVH...\n\n");
-    this->bvh = new BVHAccel(objects, 1, BVHAccel::SplitMethod::NAIVE);
+    this->bvh = new BVHAccel(objects, 1, splitMethod);
 }
 
 Intersection Scene::intersect(const Ray &ray) const

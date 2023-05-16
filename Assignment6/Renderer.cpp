@@ -6,7 +6,6 @@
 #include "Scene.hpp"
 #include "Renderer.hpp"
 
-
 inline float deg2rad(const float& deg) { return deg * M_PI / 180.0; }
 
 const float EPSILON = 0.00001;
@@ -35,6 +34,12 @@ void Renderer::Render(const Scene& scene)
             // *scale*, and x (horizontal) variable with the *imageAspectRatio*
 
             // Don't forget to normalize this direction!
+            Vector3f dir = normalize(Vector3f(x, y, -1));
+            Ray r(eye_pos, dir, 0);
+            framebuffer[m++] = scene.castRay(r, scene.maxDepth);
+            // Ray r(eye_pos, dir, scene, 0);
+
+            // framebuffer[m++] = castRay(eye_pos, dir, scene, 0);
 
         }
         UpdateProgress(j / (float)scene.height);

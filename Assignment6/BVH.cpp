@@ -55,19 +55,19 @@ BVHBuildNode* BVHAccel::recursiveBuild(std::vector<Object*> objects)
                 Union(centroidBounds, objects[i]->getBounds().Centroid());
         int dim = centroidBounds.maxExtent();
         switch (dim) {
-        case 0:
+        case 0: // 表示最宽在x轴
             std::sort(objects.begin(), objects.end(), [](auto f1, auto f2) {
                 return f1->getBounds().Centroid().x <
                        f2->getBounds().Centroid().x;
             });
             break;
-        case 1:
+        case 1: // 表示最宽在y轴
             std::sort(objects.begin(), objects.end(), [](auto f1, auto f2) {
                 return f1->getBounds().Centroid().y <
                        f2->getBounds().Centroid().y;
             });
             break;
-        case 2:
+        case 2: // 表示最宽在z轴
             std::sort(objects.begin(), objects.end(), [](auto f1, auto f2) {
                 return f1->getBounds().Centroid().z <
                        f2->getBounds().Centroid().z;
@@ -75,19 +75,66 @@ BVHBuildNode* BVHAccel::recursiveBuild(std::vector<Object*> objects)
             break;
         }
 
-        auto beginning = objects.begin();
-        auto middling = objects.begin() + (objects.size() / 2);
-        auto ending = objects.end();
+        if (splitMethod == SplitMethod::NAIVE) {
+            auto beginning = objects.begin();
+            auto middling = objects.begin() + (objects.size() / 2); // 
+            auto ending = objects.end();
 
-        auto leftshapes = std::vector<Object*>(beginning, middling);
-        auto rightshapes = std::vector<Object*>(middling, ending);
+            auto leftshapes = std::vector<Object*>(beginning, middling);
+            auto rightshapes = std::vector<Object*>(middling, ending);
 
-        assert(objects.size() == (leftshapes.size() + rightshapes.size()));
+            assert(objects.size() == (leftshapes.size() + rightshapes.size()));
 
-        node->left = recursiveBuild(leftshapes);
-        node->right = recursiveBuild(rightshapes);
+            node->left = recursiveBuild(leftshapes);
+            node->right = recursiveBuild(rightshapes);
 
-        node->bounds = Union(node->left->bounds, node->right->bounds);
+            node->bounds = Union(node->left->bounds, node->right->bounds);
+        } else if (splitMethod == SplitMethod::SAH) {
+            float SN = centroidBounds.SurfaceArea();
+            int B = 10;
+            int minCostIndex = 0;
+            float minCost = std::numeric_limits<float>::infinity();
+            
+            for (int i = 1; i < B; i++) {
+                auto beginning = objects.begin();
+                auto middling = objects.begin() + (objects.size() * i / B); // 
+                auto ending = objects.end();
+
+                auto leftshapes = std::vector<Object*>(beginning, middling);
+                auto rightshapes = std::vector<Object*>(middling, ending);
+
+                assert(objects.size() == (leftshapes.size() + rightshapes.size()));
+
+                Bounds3 leftBounds, rightBounds;
+                for (int j = 0; j < leftshapes.size(); ++j) {
+                    leftBounds = Union(leftBounds, leftshapes[j]->getBounds().Centroid());
+                }
+                for (int j = 0; j < rightshapes.size(); ++j) {
+                    rightBounds = Union(rightBounds, rightshapes[j]->getBounds().Centroid());
+                }
+
+                float SA = leftBounds.SurfaceArea();
+                float SB = rightBounds.SurfaceArea();
+                float cost = 0.125f + leftshapes.size() * SA + rightshapes.size() * SB * 1/SN;
+                if (cost < minCost) {
+                    minCost = cost;
+                    minCostIndex = i;
+                }
+            }
+
+            auto beginning = objects.begin();
+            auto middling = objects.begin() + (objects.size() * minCost / B); // 
+            auto ending = objects.end();
+            
+            auto leftshapes = std::vector<Object*>(beginning, middling);
+            auto rightshapes = std::vector<Object*>(middling, ending);
+            
+            node->left = recursiveBuild(leftshapes);
+            node->right = recursiveBuild(rightshapes);
+
+            node->bounds = Union(node->left->bounds, node->right->bounds);
+        }
+        
     }
 
     return node;
@@ -105,5 +152,17 @@ Intersection BVHAccel::Intersect(const Ray& ray) const
 Intersection BVHAccel::getIntersection(BVHBuildNode* node, const Ray& ray) const
 {
     // TODO Traverse the BVH to find intersection
+    Intersection isect;
+    if (!node->bounds.IntersectP(ray, ray.direction_inv, {0, 0, 0})) { // 这里是用来检测光线是进入包围盒
+        return isect;
+    }
 
+    if (node->left == nullptr && node->right == nullptr) {
+        return node->object->getIntersection(ray); // 说明叶子节点，直接调用ojbect的碰撞检测
+    }
+
+    Intersection hit1 = BVHAccel::getIntersection(node->left, ray);
+    Intersection hit2 = BVHAccel::getIntersection(node->right, ray);
+
+    return hit1.distance < hit2.distance ? hit1 : hit2; 
 }

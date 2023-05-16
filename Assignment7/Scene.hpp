@@ -34,7 +34,7 @@ public:
     const std::vector<std::unique_ptr<Light> >&  get_lights() const { return lights; }
     Intersection intersect(const Ray& ray) const;
     BVHAccel *bvh;
-    void buildBVH();
+    void buildBVH(BVHAccel::SplitMethod splitMethod);
     Vector3f castRay(const Ray &ray, int depth) const;
     void sampleLight(Intersection &pos, float &pdf) const;
     bool trace(const Ray &ray, const std::vector<Object*> &objects, float &tNear, uint32_t &index, Object **hitObject);

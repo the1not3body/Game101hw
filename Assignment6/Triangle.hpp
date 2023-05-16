@@ -42,11 +42,11 @@ bool rayTriangleIntersect(const Vector3f& v0, const Vector3f& v1,
 class Triangle : public Object
 {
 public:
-    Vector3f v0, v1, v2; // vertices A, B ,C , counter-clockwise order
+    Vector3f v0, v1, v2; // 三角形对应三个顶点 vertices A, B ,C , counter-clockwise order
     Vector3f e1, e2;     // 2 edges v1-v0, v2-v0;
-    Vector3f t0, t1, t2; // texture coords
-    Vector3f normal;
-    Material* m;
+    Vector3f t0, t1, t2; // 纹理坐标 texture coords
+    Vector3f normal; // 三级形法线
+    Material* m; // 材质
 
     Triangle(Vector3f _v0, Vector3f _v1, Vector3f _v2, Material* _m = nullptr)
         : v0(_v0), v1(_v1), v2(_v2), m(_m)
@@ -212,29 +212,35 @@ inline Intersection Triangle::getIntersection(Ray ray)
 {
     Intersection inter;
 
-    if (dotProduct(ray.direction, normal) > 0)
+    if (dotProduct(ray.direction, normal) > 0) // 如果光线和法线点乘大于 0
         return inter;
     double u, v, t_tmp = 0;
-    Vector3f pvec = crossProduct(ray.direction, e2);
-    double det = dotProduct(e1, pvec);
+    Vector3f pvec = crossProduct(ray.direction, e2); // S1
+    double det = dotProduct(e1, pvec); // S1E1
     if (fabs(det) < EPSILON)
         return inter;
 
-    double det_inv = 1. / det;
-    Vector3f tvec = ray.origin - v0;
-    u = dotProduct(tvec, pvec) * det_inv;
+    double det_inv = 1. / det; // 1/S1E1
+    Vector3f tvec = ray.origin - v0; // S
+    u = dotProduct(tvec, pvec) * det_inv; // b1
     if (u < 0 || u > 1)
         return inter;
-    Vector3f qvec = crossProduct(tvec, e1);
-    v = dotProduct(ray.direction, qvec) * det_inv;
+    Vector3f qvec = crossProduct(tvec, e1); // S2
+    v = dotProduct(ray.direction, qvec) * det_inv; // b2
     if (v < 0 || u + v > 1)
         return inter;
-    t_tmp = dotProduct(e2, qvec) * det_inv;
+    t_tmp = dotProduct(e2, qvec) * det_inv; // t
 
     // TODO find ray triangle intersection
-
-
-
+    if (t_tmp < 0)
+        return inter;
+    
+    inter.happened = true;
+    inter.coords = Vector3f(ray.origin + ray.direction * t_tmp);
+    inter.normal = normal;
+    inter.m = this->m;
+    inter.obj = this;
+    inter.distance = t_tmp;
 
     return inter;
 }

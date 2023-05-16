@@ -8,9 +8,9 @@
 struct Ray{
     //Destination = origin + t*direction
     Vector3f origin;
-    Vector3f direction, direction_inv;
-    double t;//transportation time,
-    double t_min, t_max;
+    Vector3f direction, direction_inv; // dir_inv 光线方向的插值
+    double t;// 光的传播时间
+    double t_min, t_max; // t_min进入包围盒时间, t_max离开包围盒的时间
 
     Ray(const Vector3f& ori, const Vector3f& dir, const double _t = 0.0): origin(ori), direction(dir),t(_t) {
         direction_inv = Vector3f(1./direction.x, 1./direction.y, 1./direction.z);

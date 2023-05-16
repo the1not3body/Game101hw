@@ -39,7 +39,7 @@ int main(int argc, char** argv)
     scene.Add(&right);
     scene.Add(&light_);
 
-    scene.buildBVH();
+    scene.buildBVH(BVHAccel::SplitMethod::SAH);
 
     Renderer r;
 
