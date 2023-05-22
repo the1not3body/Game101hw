@@ -28,13 +28,21 @@ int main(int argc, char** argv)
     MeshTriangle floor("../models/cornellbox/floor.obj", white);
     MeshTriangle shortbox("../models/cornellbox/shortbox.obj", white);
     MeshTriangle tallbox("../models/cornellbox/tallbox.obj", white);
+    // MeshTriangle bunny("../models/bunny/bunny.obj", white, Vector3f(300, 0, 300),
+    //     Vector3f(2000, 2000, 2000));
     MeshTriangle left("../models/cornellbox/left.obj", red);
     MeshTriangle right("../models/cornellbox/right.obj", green);
     MeshTriangle light_("../models/cornellbox/light.obj", light);
 
+    Material* m = new Material(DIFFUSE, Vector3f(0.0f));
+    m->Ks = Vector3f(0.45, 0.45, 0.45);
+	m->Kd = Vector3f(0.3, 0.3, 0.25);
+    Sphere sphere(Vector3f(150, 100, 300), 100, m);
     scene.Add(&floor);
-    scene.Add(&shortbox);
-    scene.Add(&tallbox);
+    // scene.Add(&shortbox);
+    // scene.Add(&tallbox);
+    // scene.Add(&bunny);
+    scene.Add(&sphere);
     scene.Add(&left);
     scene.Add(&right);
     scene.Add(&light_);
