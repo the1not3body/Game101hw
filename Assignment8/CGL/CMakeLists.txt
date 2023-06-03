@@ -7,7 +7,7 @@ project(CGL)
 #-------------------------------------------------------------------------------
 # Build options
 #-------------------------------------------------------------------------------
-option(CGL_BUILD_DEBUG    "Build for debug"          OFF)
+option(CGL_BUILD_DEBUG    "Build for debug"          ON)
 option(CGL_BUILD_SHARED   "Build shared libraries"   OFF)
 option(CGL_BUILD_DOCS     "Build documentation"      OFF)
 option(CGL_BUILD_TESTS    "Build tests programs"     OFF)

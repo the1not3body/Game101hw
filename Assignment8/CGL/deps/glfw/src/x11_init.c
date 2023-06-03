@@ -241,10 +241,11 @@ static void createKeyTables(void)
         // keyboard layout
 
         char name[XkbKeyNameLength + 1];
-        XkbDescPtr descr = XkbGetKeyboard(_glfw.x11.display,
-                                          XkbAllComponentsMask,
-                                          XkbUseCoreKbd);
-
+        // XkbDescPtr descr = XkbGetKeyboard(_glfw.x11.display,
+        //                                   XkbAllComponentsMask,
+        //                                   XkbUseCoreKbd);
+        XkbDescPtr descr = XkbGetMap(_glfw.x11.display, 0, XkbUseCoreKbd);
+        XkbGetNames(_glfw.x11.display, XkbKeyNamesMask, descr);
         // Find the X11 key code -> GLFW key code mapping
         for (scancode = descr->min_key_code;  scancode <= descr->max_key_code;  scancode++)
         {
@@ -309,7 +310,9 @@ static void createKeyTables(void)
                 _glfw.x11.publicKeys[scancode] = key;
         }
 
-        XkbFreeKeyboard(descr, 0, True);
+        // XkbFreeKeyboard(descr, 0, True);
+        XkbFreeNames(descr, XkbKeyNamesMask, True);
+        XkbFreeClientMap(descr, 0, True);
     }
 
     // Translate the un-translated key codes using traditional X11 KeySym
